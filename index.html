@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neon Love Heart - Sweep Animation</title>
+    <title>Dynamic Neon Morning & Love Animation</title>
     <style>
         body {
             margin: 0;
@@ -28,7 +28,6 @@
     const canvas = document.getElementById('heartCanvas');
     const ctx = canvas.getContext('2d');
 
-    // ตั้งค่าขนาด Canvas ตามหน้าจอ
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
@@ -36,73 +35,89 @@
     const centerY = canvas.height / 2;
 
     const phrases = [
-        "I love you", "Seni seviyorum", "Te amo", "Ti amo", "Je t'aime",
-        "Я тебя люблю", "Ich liebe dich", "Aku cinta kamu", "Kocham cię",
-        "Jag älskar dig", "ฉันรักคุณ", "사랑해", "我爱你", "Anh yêu em"
+        "Good morning", "Bonjour", "Guten Morgen", "Buenos días", "Buongiorno", 
+        "อรุณสวัสดิ์", "Доброе утро", "God morgon", "Günaydın", "Selamat pagi", 
+        "おはよう", "I love you", "ฉันรักคุณ", "Te amo", "Ti amo", "Je t'aime", 
+        "Я тебя люблю", "Ich liebe dich", "Aku cinta kamu"
     ];
 
-    const colors = ["#ff0055", "#ff3300", "#ff66aa", "#ff0000", "#ffffff"];
+    const colors = ["#ff0055", "#ff3300", "#ff66aa", "#ff0000", "#ffffff", "#00f0ff", "#ff00ff", "#39ff14", "#ffff00"];
 
     const points = [];
-    const numPoints = 250;
+    const numPoints = 200;
 
-    // คำนวณพิกัดและข้อมูลของทุกจุดเก็บไว้ก่อน (เหมือนใน Python)
     for (let i = 0; i < numPoints; i++) {
         const t = (i / numPoints) * (2 * Math.PI);
-        const scale = 10 + Math.random() * 8; // สุ่มสเกล 10 ถึง 18
+        const scaleBase = 10 + Math.random() * 8; // ขนาดหัวใจพื้นฐาน
 
-        // สูตรสมการรูปหัวใจ
         const x = 16 * Math.pow(Math.sin(t), 3);
         const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
 
-        const text = phrases[Math.floor(Math.random() * phrases.length)];
+        const text = phrases[i % phrases.length];
         const color = colors[Math.floor(Math.random() * colors.length)];
-        const fontSize = Math.floor(Math.random() * (18 - 10 + 1)) + 10; // สุ่มฟอนต์ 10 ถึง 18
+        const fontSize = Math.floor(Math.random() * (16 - 10 + 1)) + 10;
 
         points.push({
-            x: x * scale,
-            y: y * scale, // จะไปกลับด้านแกน Y ตอนวาด
+            t: t,
+            baseX: x * scaleBase,
+            baseY: y * scaleBase,
             text: text,
             color: color,
-            fontSize: fontSize
+            fontSize: fontSize,
+            speed: 0.01 + Math.random() * 0.02, // ความเร็วในการเคลื่อนที่ขึ้นลงของแต่ละตัว
+            offset: Math.random() * Math.PI * 2 // ตำแหน่งเริ่มต้นของคลื่น
         });
     }
 
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
-    let currentIndex = 0;
+    let time = 0;
 
-    // ฟังก์ชันสำหรับวาดอนิเมชันทีละจุด
-    function drawNextPoint() {
-        if (currentIndex < points.length) {
-            const p = points[currentIndex];
+    function animate() {
+        // เคลียร์หน้าจอทุกเฟรมแบบให้ทิ้งเงาบางๆ (ช่วยให้แสงของนีออนดูนุ่มนวลและเคลื่อนไหวพริ้วขึ้น)
+        ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        time += 0.015; // ความเร็วของการหมุน/สั่นไหวโดยรวม
+
+        for (let i = 0; i < points.length; i++) {
+            const p = points[i];
+
+            // สร้างเอฟเฟกต์การสั่นไหวและสยายเข้า-ออกเป็นจังหวะหัวใจ (Heartbeat Pulse)
+            const pulse = 1 + 0.15 * Math.sin(time * 3 + p.offset);
             
-            // แปลงพิกัด (แกน Y ของ Canvas ต้องติดลบเพื่อกลับด้านให้ตรงกับคณิตศาสตร์)
-            const drawX = centerX + p.x;
-            const drawY = centerY - p.y;
+            // การหมุนวนยิบยับเล็กน้อย
+            const rotationOffset = 0.05 * Math.sin(time + p.t);
+            const currentT = p.t + rotationOffset;
 
-            ctx.font = `bold ${p.fontSize}px Arial`;
+            const x = 16 * Math.pow(Math.sin(currentT), 3) * (10 + p.fontSize * 0.3) * pulse;
+            const y = (13 * Math.cos(currentT) - 5 * Math.cos(2 * currentT) - 2 * Math.cos(3 * currentT) - Math.cos(4 * currentT)) * (10 + p.fontSize * 0.3) * pulse;
+
+            const drawX = centerX + x;
+            const drawY = centerY - y;
+
+            // เอฟเฟกต์แสงฟุ้ง (Neon Glow)
+            ctx.shadowBlur = 12;
+            ctx.shadowColor = p.color;
+
+            ctx.font = `bold ${p.fontSize}px 'Segoe UI', Arial, sans-serif`;
             ctx.fillStyle = p.color;
             ctx.fillText(p.text, drawX, drawY);
-
-            currentIndex++;
-            
-            // เรียกฟังก์ชันตัวเองในเฟรมถัดไปเพื่อสร้างอนิเมชัน
-            requestAnimationFrame(drawNextPoint);
         }
+
+        // รีเซ็ตค่า Shadow เพื่อประสิทธิภาพการประมวลผล
+        ctx.shadowBlur = 0;
+
+        requestAnimationFrame(animate);
     }
 
-    // เริ่มเล่นอนิเมชัน
-    drawNextPoint();
+    animate();
 
-    // วาดใหม่เมื่อเปลี่ยนขนาดหน้าจอ
+    // รองรับการย่อ/ขยายขนาดหน้าจออัตโนมัติ
     window.addEventListener('resize', () => {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        currentIndex = 0;
-        drawNextPoint();
     });
 </script>
 
